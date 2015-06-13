@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>自动轮播</title>
+    	<style type="text/css">
+        body,ul,li,img{ margin:0px; padding:0px;}
+		.focus{ width:900px; margin:30px auto; overflow:hidden; background:#eee;}
+		.focus-inner{ height:290px; overflow:hidden;}
+		.list{ width:290px; height:290px; float:left; background:#FC0; margin:0px 5px;}
+		.clearfix:after{ content:""; display:block; clear:both; height:0px; width:0px; font-size:0px; overflow:hidden;}
+		.focus-dotted{ text-align:center; margin:10px auto;}
+		.focus-dotted a{ width:10px; height:10px; border-radius:50%; background:#ccc; display:inline-block; margin:0px 5px;}
+		.focus-dotted a.visited{ background:#fc0;}
+        </style>
+        <script src="js/jquery.js"></script>
+    </head>
+    <body>
+        <div class="focus">
+            <div class="focus-inner clearfix">
+                <div class="list">
+                    1
+                </div>
+                <div class="list">
+                    2
+                </div>
+                <div class="list">
+                    3
+                </div>
+                <div class="list">
+                    4
+                </div>
+                <div class="list">
+                    5
+                </div>
+                <div class="list">
+                    6
+                </div>
+                <div class="list">
+                   7
+                </div>
+            </div>
+            <div class="focus-dotted">
+                <a href="javascript:;" class="visited"></a>
+            </div>
+        </div>
+    
+		<script type="text/javascript">
+        	/*
+				思路:
+				每隔3秒，focusbody自动向左移动 focusBox的宽度
+			
+			*/
+			$(document).ready(function(e) {
+                var focusBox=$(".focus");
+				var focusBody=$(".focus-inner");	
+				var focusList=focusBody.find(".list");
+				var focusBar=$(".focus-dotted");
+				var scrollWidth=focusBox.width();
+				var nowScrollSum=0;
+				var dChild=0,d;
+				var timer=null;
+				//设置focusBody的宽度
+				focusBody.css('width',focusList.length*(focusList.width()+10)+"px");
+			
+				//用内容的长度取余外框，看最多能滚几次			
+				d=Math.ceil(focusBody.width()/focusBox.width());
+			
+				function autoScroll(){
+					focusBody.animate({'marginLeft':-nowScrollSum+"px"},1000);		
+					nowScrollSum+=scrollWidth;
+					dChild++;
+					if(dChild>=d){
+						console.log('超过了');
+						clearInterval(timer);
+						timer=null;
+						nowScrollSum=0;
+						dChild=0;
+						setTimeout(function(){
+							focusBody.animate({'marginLeft':-nowScrollSum+"px"},1000,function(){
+								timer=setInterval(autoScroll,3000);		
+							})},3000);
+					}
+				}
+				timer=setInterval(autoScroll,3000);				
+								
+
+            });
+			
+			
+			
+        </script>    
+    
+    
+    
+    
+    
+    
+    </body>
+</html>
