@@ -7,11 +7,13 @@
         body,ul,li,img{ margin:0px; padding:0px;}
 		.focus{ width:900px; margin:30px auto; overflow:hidden; background:#eee;}
 		.focus-inner{ height:290px; overflow:hidden;}
-		.list{ width:290px; height:290px; float:left; background:#FC0; margin:0px 5px;}
+		.list{ width:290px; height:290px; line-height:290px; text-align:center; float:left; background:#FC0; margin:0px 5px;}
 		.clearfix:after{ content:""; display:block; clear:both; height:0px; width:0px; font-size:0px; overflow:hidden;}
 		.focus-dotted{ text-align:center; margin:10px auto;}
 		.focus-dotted a{ width:10px; height:10px; border-radius:50%; background:#ccc; display:inline-block; margin:0px 5px;}
 		.focus-dotted a.visited{ background:#fc0;}
+		.changeBtn{ text-align:center;}
+		.changeBtn a{ display:inline-block; padding:5px 15px; border:1px solid #eee; border-radius:5px; text-decoration:none; color:#000;}
         </style>
         <script src="js/jquery.js"></script>
     </head>
@@ -41,54 +43,128 @@
                 </div>
             </div>
             <div class="focus-dotted">
-                <a href="javascript:;" class="visited"></a>
             </div>
         </div>
-    
+    	<div class="changeBtn">
+			<a class="goLeft" href="javascript:;">左</a>
+			<a class="goRight" href="javascript:;">右</a>
+		</div>
 		<script type="text/javascript">
         	/*
 				思路:
-				每隔3秒，focusbody自动向左移动 focusBox的宽度
-			
+				每隔3秒，focusbody自动向左移动 viewpoint的宽度
 			*/
-			$(document).ready(function(e) {
-                var focusBox=$(".focus");
-				var focusBody=$(".focus-inner");	
-				var focusList=focusBody.find(".list");
-				var focusBar=$(".focus-dotted");
-				var scrollWidth=focusBox.width();
-				var nowScrollSum=0;
-				var dChild=0,d;
-				var timer=null;
-				//设置focusBody的宽度
-				focusBody.css('width',focusList.length*(focusList.width()+10)+"px");
-			
-				//用内容的长度取余外框，看最多能滚几次			
-				d=Math.ceil(focusBody.width()/focusBox.width());
-			
-				function autoScroll(){
-					focusBody.animate({'marginLeft':-nowScrollSum+"px"},1000);		
-					nowScrollSum+=scrollWidth;
-					dChild++;
-					if(dChild>=d){
-						console.log('超过了');
-						clearInterval(timer);
-						timer=null;
-						nowScrollSum=0;
-						dChild=0;
-						setTimeout(function(){
-							focusBody.animate({'marginLeft':-nowScrollSum+"px"},1000,function(){
-								timer=setInterval(autoScroll,3000);		
-							})},3000);
+			function getCss(ele,attr){
+				if(window.getComputedStyle){
+					return parseFloat(getComputedStyle(ele,null)[attr]);
+				}else{
+					return parseFloat(ele.currentStyle[attr]);
+				}
+			}
+			function buffer(ele,attr,target){
+				_buffer();
+				function _buffer(){
+					var cur=getCss(ele,attr);
+					clearTimeout(ele.timer);
+					var nspeed=(target-cur)/13;
+					nspeed = nspeed >0 ? Math.ceil(nspeed) : Math.floor(nspeed);
+					ele.style[attr]=cur+nspeed+"px";
+					if(nspeed){
+					ele.timer=window.setTimeout(_buffer,20);
 					}
 				}
-				timer=setInterval(autoScroll,3000);				
-								
-
-            });
-			
-			
-			
+			}
+			$(document).ready(function(e) {
+                var viewpoint=$(".focus");
+					viewpointWidth=viewpoint.width(),//滚动视口的宽度
+				 	focusBody=$(".focus-inner"),	
+				 	focusList=focusBody.find(".list"),
+				 	currentScrollSum=0,//当前滚动的总长度
+				 	currentIteration=0,//当前是第几次滚动
+					iterations=null,//总共可以滚动几次
+				    timer=null;
+				//设置focusBody的宽度
+				focusBody.css('width',focusList.length*(focusList.width()+10)+"px");			
+				//用内容的长度取余外框，看最多能滚几次			
+				iterations=Math.ceil(focusBody.width()/viewpoint.width());	
+				for(var i=0;i<iterations;i++){
+					$(".focus-dotted").append("<a href='javascript:;'></a>");
+				}
+				//$(".focus-dotted").append("");		
+				function setDotted(num){
+					$(".focus-dotted a").removeClass("visited").eq(num).addClass("visited");	
+				}
+				setDotted(currentIteration);
+				function autoScroll(){
+					buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					setDotted(currentIteration);
+					currentScrollSum+=viewpointWidth;
+					currentIteration++;
+					if(currentIteration>iterations){
+						clearInterval(timer);
+						timer=null;
+						currentScrollSum=0;
+						currentIteration=0;
+						setDotted(currentIteration);
+						buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+						timer=setInterval(autoScroll,3000);
+					}
+				}
+				timer=setInterval(autoScroll,3000);			
+				$(".goRight").click(function(){
+					clearInterval(timer);
+					currentIteration++;
+					currentScrollSum+=viewpointWidth;
+					if(currentIteration>=iterations){
+						timer=null;
+						currentScrollSum=0;
+						currentIteration=0;
+						buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					}else{					
+						buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					}
+					setDotted(currentIteration);
+					$(this).mouseleave(function(){
+						clearInterval(timer);
+						timer=setInterval(autoScroll,3000);			
+					});
+				});		
+				$(".goLeft").click(function(){
+					clearInterval(timer);
+					currentIteration--;
+					currentScrollSum-=viewpointWidth;
+					if(currentIteration<=0){
+						timer=null;
+						currentScrollSum=viewpointWidth*(iterations-1);
+						currentIteration=iterations;
+						buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					}else{					
+						buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					}
+					setDotted(currentIteration-1);
+					$(this).mouseleave(function(){
+						clearInterval(timer);
+						timer=setInterval(autoScroll,3000);			
+					});	
+				});
+				$(".focus-inner").mouseenter(function(){
+					clearInterval(timer);	
+				}).mouseleave(function(){	
+					clearInterval(timer);				
+					timer=setInterval(autoScroll,3000);	
+				});
+            	$(".focus-dotted a").click(function(){
+					clearInterval(timer);		
+					var currentIteration=$(this).index();	
+					currentScrollSum=viewpointWidth*currentIteration;					
+					buffer(focusBody.get(0),'marginLeft',-currentScrollSum);
+					setDotted(currentIteration);
+					$(this).mouseleave(function(){
+						clearInterval(timer);
+						timer=setInterval(autoScroll,3000);			
+					});	
+				});
+			});
         </script>    
     
     
